@@ -30,19 +30,19 @@ package tacticghost.maps.core
 			
 		}
 		
-		public function getNode(x:int, y:int):Node
+		public function getNode(x:int, z:int):Node
 		{
-			return _nodes[x][y] as Node;
+			return _nodes[x][z] as Node;
 		}
 		
-		public function setEndNode(x:int,y:int):void
+		public function setEndNode(x:int,z:int):void
 		{
-			_endNode = _nodes[x][y] as Node;
+			_endNode = _nodes[x][z] as Node;
 		}
 		
-		public function setStartNode(x:int,y:int):void
+		public function setStartNode(x:int,z:int):void
 		{
-			_startNode = _nodes[x][y] as Node;
+			_startNode = _nodes[x][z] as Node;
 		}
 		
 		public function clearWalkable():void
@@ -59,9 +59,9 @@ package tacticghost.maps.core
 			}
 		}
 		
-		public function setWalkable(x:int,y:int,value:Boolean):void
+		public function setWalkable(x:int,z:int,value:Boolean):void
 		{
-			_nodes[x][y].walkable = value;
+			_nodes[x][z].walkable = value;
 		}
 		
 		public function get endNode():Node

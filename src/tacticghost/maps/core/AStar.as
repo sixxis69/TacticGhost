@@ -44,8 +44,8 @@ package tacticghost.maps.core
 			var j:int;
 			var startX:int 	= Math.max(0,_startNode.x-range);
 			var endX:int   	= Math.min(_grid.numCols-1,_startNode.x+range);
-			var startY:int 	= Math.max(0,_startNode.y-range);
-			var endY:int	= Math.min(_grid.numRows-1,_startNode.y+range);
+			var startY:int 	= Math.max(0,_startNode.z-range);
+			var endY:int	= Math.min(_grid.numRows-1,_startNode.z+range);
 			
 			_availble = [];
 			var node:Node;
@@ -87,8 +87,8 @@ package tacticghost.maps.core
 			{
 				startX = Math.max(0,node.x-1);
 				endX = Math.min(_grid.numCols-1,node.x+1);
-				startY = Math.max(0,node.y-1);
-				endY = Math.min(_grid.numRows-1,node.y+1);
+				startY = Math.max(0,node.z-1);
+				endY = Math.min(_grid.numRows-1,node.z+1);
 				
 				for(i=startX; i<=endX; i++)
 				{
@@ -98,7 +98,7 @@ package tacticghost.maps.core
 						if(test == node || !test.walkable) continue;
 						
 						cost = _straightCost;
-						if(!((node.x == test.x) || (node.y == test.y)))
+						if(!((node.x == test.x) || (node.z == test.z)))
 						{
 							//							cost = _diadConst;
 							continue;
@@ -190,13 +190,13 @@ package tacticghost.maps.core
 		private function euclidian(node:Node):Number
 		{
 			var dx:int = node.x - _endNode.x;
-			var dy:int = node.y - _endNode.y;
+			var dy:int = node.z - _endNode.z;
 			return Math.sqrt(dx*dx+dy*dy);
 		}
 		
 		private function manhattan(node:Node):Number
 		{
-			return Math.abs(node.x-_endNode.x)+Math.abs(node.y+_endNode.y);
+			return Math.abs(node.x-_endNode.x)+Math.abs(node.z+_endNode.z);
 		}
 		
 		public function get visited():Array
