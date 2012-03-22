@@ -64,6 +64,11 @@ package tacticghost.maps.core
 			_nodes[x][z].walkable = value;
 		}
 		
+		public function setUserData(x:int,z:int,data:*):void
+		{
+			_nodes[x][z].userData = data;
+		}
+		
 		public function get endNode():Node
 		{
 			return _endNode;

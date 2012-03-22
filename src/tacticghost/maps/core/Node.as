@@ -9,6 +9,7 @@ package tacticghost.maps.core
 		public var h:Number;
 		public var walkable:Boolean = true;
 		public var parent:Node;
+		public var userData:*;
 		
 		public function Node(x:int,z:int)
 		{

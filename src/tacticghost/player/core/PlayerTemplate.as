@@ -1,37 +1,78 @@
 package tacticghost.player.core
 {
-	import com.bit101.components.PushButton;
-	
-	import flare.core.Boundings3D;
 	import flare.core.Mesh3D;
 	import flare.core.Pivot3D;
 	import flare.events.MouseEvent3D;
 	import flare.loaders.ColladaLoader;
-	import flare.materials.Shader3D;
-	import flare.materials.filters.ColorFilter;
-	import flare.primitives.Cube;
 	import flare.utils.Mesh3DUtils;
 	
 	import flash.display.Stage;
-	import flash.events.Event;
 	import flash.events.MouseEvent;
 	
 	import tacticghost.GameScene;
+	import tacticghost.maps.core.Node;
 	import tacticghost.player.events.PlayerEvent;
 	
 	public class PlayerTemplate extends Pivot3D
 	{
-		[Embed(source='assets/player.dae',mimeType='application/octet-stream')]
+		[Embed(source='assets/players/player.dae',mimeType='application/octet-stream')]
 		private var DAEFile:Class
 		
 		private var isClick:Boolean;
-		private var bt:PushButton;
 		
-		// TODO: template walk
-		private var _walk:Vector.<Vector.<int>> = new <Vector.<int>>[
-			new <int>[0,1,0],
-			new <int>[0,1,0],
-			new <int>[0,2,0]];
+		public static const WALK:int = 1;
+		public static const PLAYER:int = 2;
+		
+		protected var walkList:Vector.<Vector.<int>> = new <Vector.<int>>[
+			new <int>[0,1,0,1,0],
+			new <int>[1,0,0,0,1],
+			new <int>[0,0,2,0,0],
+			new <int>[1,0,0,0,1],
+			new <int>[0,1,0,1,0]];
+		
+		public function getWalkNode(nx:int,nz:int):Vector.<Node>
+		{
+			var result:Vector.<Node> = new Vector.<Node>();
+			var userNode:Node;
+			
+			var i:int;
+			var j:int;
+			var n:Node;
+			
+			// find node
+			for(i=0; i<walkList.length; i++)
+			{
+				for(j=0; j<walkList[i].length; j++)
+				{
+					switch(walkList[i][j])
+					{
+						case 1:
+							n = new Node(j,i);
+							result.push(n);
+							break;
+						case 2:
+							userNode = new Node(j,i);
+							break;
+					}
+				}
+			}
+			
+			// compare with map
+			var difNode:Node = new Node(userNode.x-nx,userNode.z-nz);
+			for(i=0; i<result.length; i++)
+			{
+				result[i].x = result[i].x - difNode.x;
+				result[i].z = result[i].z - difNode.z;
+			}
+			
+			return result;
+		}
+		
+		public function walk(list:Vector.<Node>):void
+		{
+			trace('move player');
+			
+		}
 		
 		public function PlayerTemplate(name:String="")
 		{
@@ -43,37 +84,8 @@ package tacticghost.player.core
 		protected function loadModel():void
 		{
 			// load
-			var modelLoader:ColladaLoader = new ColladaLoader(XML(new DAEFile()),this,null,'assets/');
+			var modelLoader:ColladaLoader = new ColladaLoader(XML(new DAEFile()),this,null,'assets/players/');
 			modelLoader.load();
-
-			// convert to mesh
-			var obj:Mesh3D = Mesh3DUtils.merge(this.children);
-			obj.y = 50;
-			this.addChild(obj);
-			
-			// add event
-			obj.addEventListener(MouseEvent3D.CLICK, onClick);
-		}
-		
-		private function onClick(e:MouseEvent3D):void
-		{
-			if(!isClick)
-			{
-				var s:Stage = GameScene(this.scene).stage;
-				bt = new PushButton(s,s.mouseX+10,s.mouseY-30,'walk');
-				bt.addEventListener(MouseEvent.CLICK, onClickButton);
-				
-				isClick = true;
-			}
-		}
-		
-		private function onClickButton(e:MouseEvent):void
-		{
-			isClick = false;
-			bt.removeEventListener(MouseEvent.CLICK, onClickButton);
-			bt.parent.removeChild(bt);
-			
-			this.dispatchEvent(new PlayerEvent(PlayerEvent.SHOW_AVAILBLE));
 		}
 	}
 }

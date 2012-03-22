@@ -1,23 +1,27 @@
 package tacticghost
 {
 	import flare.basic.Scene3D;
-	import flare.basic.Viewer3D;
 	import flare.core.Pivot3D;
 	
 	import flash.display.Sprite;
 	import flash.events.Event;
 	
+	import tacticghost.maps.core.MapTemplate;
+	import tacticghost.ui.core.iPhoneController;
+	import tacticghost.ui.events.ControllerEvent;
+	
 	public class Game extends Sprite
 	{
 		private var gameContainer:Sprite;
-		private var controlContainer:Sprite;
+		private var controllerPad:iPhoneController;
 		
 		private var scene:GameScene;
-		private var mapContainer:Pivot3D;
+		private var mapContainer:MapTemplate;
 		
 		public function Game()
 		{
 			this.addEventListener(Event.ADDED_TO_STAGE,active);
+			this.addEventListener(Event.REMOVED_FROM_STAGE,deactive);
 		}
 		
 		private function active(e:Event):void
@@ -28,27 +32,62 @@ package tacticghost
 			initControl();
 		}
 		
+		private function deactive(e:Event):void
+		{
+			
+		}
+		
 		private function initGame():void
 		{
-			scene = new GameScene(this);
+			gameContainer = new Sprite();
+			this.addChild(gameContainer);
+			
+			scene = new GameScene(gameContainer);
 			scene.stage = this.stage;
-			scene.camera.setPosition(0,1500,-1500);
+			scene.camera.setPosition(0,200,-200);
 			scene.camera.lookAt(0,0,0);
 			
-			mapContainer = new Pivot3D('map');
-			scene.addChild(mapContainer);
+			scene.addEventListener(Scene3D.UPDATE_EVENT, updateHandler);
 		}
 		
 		private function initControl():void
 		{
-			// TOD: create ui control
-//			var spr:Sprite = new Sprite();
-//			spr.add
+			controllerPad = new iPhoneController();
+			controllerPad.addEventListener(ControllerEvent.CLICK, controllerHandler);
+			this.addChild(controllerPad);
 		}
 		
-		public function addMap(map:Pivot3D):void
+		private function controllerHandler(e:ControllerEvent):void
 		{
-			scene.addChild(map);
+			switch(e.clickType)
+			{
+				case iPhoneController.UP:
+					mapContainer.moveCursor(0,-1);
+					break;
+				case iPhoneController.DOWN:
+					mapContainer.moveCursor(0,1);
+					break;
+				case iPhoneController.LEFT:
+					mapContainer.moveCursor(-1,0);
+					break;
+				case iPhoneController.RIGHT:
+					mapContainer.moveCursor(1,0);
+					break;
+				case iPhoneController.ACTION:
+					mapContainer.openAction();
+					break;
+			}
+		}
+		
+		public function addMap(map:MapTemplate):void
+		{
+			mapContainer = map;
+			scene.addChild(mapContainer);
+		}
+		
+		private function updateHandler(e:Event):void
+		{
+			mapContainer.update();
 		}
 	}
 }

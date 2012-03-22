@@ -7,7 +7,7 @@ package tacticghost.maps.core
 		private var _grid:Grid;
 		private var _endNode:Node;
 		private var _startNode:Node;
-		private var _path:Array;
+		private var _path:Vector.<Node>;
 		private var _availble:Array;
 		private var _heuristic:Function = euclidian;
 		private var _straightCost:int = 1;
@@ -146,7 +146,7 @@ package tacticghost.maps.core
 		
 		private function buildPath():void
 		{
-			_path = new Array();
+			_path = new Vector.<Node>();
 			var node:Node = _endNode;
 			_path.push(node);
 			while(node != _startNode)
@@ -156,7 +156,7 @@ package tacticghost.maps.core
 			}
 		}
 		
-		public function get path():Array
+		public function get path():Vector.<Node>
 		{
 			return _path;
 		}

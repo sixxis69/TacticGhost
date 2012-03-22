@@ -1,5 +1,7 @@
 package tacticghost.maps.core
 {
+	import com.greensock.TweenLite;
+	
 	import flare.core.Pivot3D;
 	import flare.events.MouseEvent3D;
 	import flare.materials.Shader3D;
@@ -7,67 +9,80 @@ package tacticghost.maps.core
 	import flare.primitives.Cube;
 	import flare.primitives.Plane;
 	
+	import flash.events.TimerEvent;
 	import flash.geom.Vector3D;
+	import flash.utils.Timer;
 	
 	import tacticghost.maps.core.AStar;
 	import tacticghost.maps.core.Grid;
+	import tacticghost.player.core.PlayerTemplate;
 	import tacticghost.player.events.PlayerEvent;
 	
 	public class MapTemplate extends Pivot3D
 	{
-		public static const initX:int = -1000+50;
-		public static const initZ:int = 1000-50;
-		public static const CELL_SIZE:int = 100;
+		public static const UNIT_SIZE:int = 10;
 		
-		protected var pathContainer:Pivot3D;
-		protected var cubeContainer:Pivot3D;
+		protected var minX:int;
+		protected var minZ:int;
+		protected var maxX:int;
+		protected var maxZ:int;
+		
+		protected var pathGroup:Vector.<WalkPlane>;
 		protected var grid:Grid;
 		
-		public static function getX(tx:int):int
+		protected var cursor:CursorPlane;
+		protected var currentPlayer:PlayerTemplate;
+		
+		public function getNodeX(value:int):int
 		{
-			return initX + tx*CELL_SIZE;
+			return (value-minX)/UNIT_SIZE;	
 		}
 		
-		public static function getZ(tz:int):int
+		public function getNodeZ(value:int):int
 		{
-			return initZ - tz*CELL_SIZE;
+			return (minZ-value)/UNIT_SIZE;
+		}
+		
+		public function getX(tx:int):int
+		{
+			return minX + tx*UNIT_SIZE;
+		}
+		
+		public function getZ(tz:int):int
+		{
+			return minZ - tz*UNIT_SIZE;
 		}
 		
 		public function MapTemplate(name:String="")
 		{
 			super(name);
 			
-			init();
-			createObject();
+			pathGroup = new Vector.<WalkPlane>();
+		}
+
+		protected function loadModel():void
+		{
+			// NOTE: define in subclass
 		}
 		
-		protected function init(numRows:int=20,numColumns:int=20):void
+		protected function createGrid(numRows:int=20,numColumns:int=20):void
 		{
-			pathContainer = new Pivot3D();
-			this.addChild(pathContainer);
-			
-			cubeContainer = new Pivot3D();
-			this.addChild(cubeContainer);
-			
 			grid = new Grid(numRows,numColumns);
-		}
-		
-		protected function createDummy(tx:int,tz:int):void
-		{
-			var mat:Shader3D = new Shader3D('',[new ColorFilter(0x0)]);
-			var box:Cube = box = new Cube('',100,100,100,1,mat);
-			box.y = 50;
-			box.x = initX + tx *CELL_SIZE;
-			box.z = initZ - tz *CELL_SIZE;
-			cubeContainer.addChild(box);
 			
-			grid.setWalkable(x,z,false);
-		}
-		
-		protected function createObject():void
-		{
-			var plane:Plane = new Plane('floor',2000,2000,1,null,"+xz");
-			this.addChild(plane);
+//			var plane:Plane = new Plane('floor',numRows*UNIT_SIZE,numColumns*UNIT_SIZE,1,null,"+xz");
+//			this.addChild(plane);
+			
+			// assign limit value
+			minX = -(numRows*UNIT_SIZE)/2 + UNIT_SIZE/2;
+			minZ = (numColumns*UNIT_SIZE)/2 - UNIT_SIZE/2;
+			maxX = minX + (numRows-1)*UNIT_SIZE;
+			maxZ = minZ - (numColumns-1)*UNIT_SIZE;
+			
+			// create cursor
+			cursor = new CursorPlane();
+			cursor.x = getX(0);
+			cursor.z = getZ(0);
+			this.addChild(cursor);
 		}
 		
 		protected function findPath():void
@@ -75,72 +90,161 @@ package tacticghost.maps.core
 			var astar:AStar = new AStar();
 			if(astar.findPath(grid))
 			{
-				// TODO: MOVE player
-				showPath(astar);
+				// NOTE: MOVE player
+				movePlayer(astar.path);
+//				currentPlayer.walk(astar.path);
+//				showPath(astar);
+			}
+			else
+			{
+				// NOTE: not found path
 			}
 		}
 		
-		protected function showAvailable(range:int=0):void
+		protected var timer:Timer;
+		protected function movePlayer(list:Vector.<Node>):void
 		{
-			// TODO: define dynamic range
+			// TODO: have to change algorithm
 			
-		}
-		
-		private function showPath(a:AStar):void
-		{
-			// clear
-			while(pathContainer.children.length > 0)
+			
+			
+			var i:int;
+			var n:Node;
+			var numStep:int = list.length;
+			var tx:int;
+			var tz:int;
+			
+			// clear user node
+			tx = getNodeX(currentPlayer.x);
+			tz = getNodeZ(currentPlayer.z);
+			n = grid.getNode(tx,tz);
+			n.userData = null;
+			n.walkable = true;
+			
+			// remove plane		
+			while(pathGroup.length > 0)
 			{
-				pathContainer.removeChild(pathContainer.children[0]);
+				this.removeChild(pathGroup[0]);
+				pathGroup.shift();
 			}
 			
-			var mat:Shader3D = new Shader3D('',[new ColorFilter(0xff0000)]);
-			var box:Cube;
+			// create animate
+			timer = new Timer(300,numStep);
+			timer.addEventListener(TimerEvent.TIMER, onUpdateStep);
 			
-			var path:Array = a.path;
-			for(var i:int=0; i<path.length; i++)
+			timer.start();
+			
+			function onUpdateStep(e:TimerEvent):void
 			{
-				box = new Cube('',100,2,100,1,mat);
-				box.y = 1;
-				box.x = getX(path[i].x);
-				box.z = getZ(path[i].y);
-				pathContainer.addChild(box);
-			}
-		}
-		
-		private function onCreateBox(e:MouseEvent3D):void
-		{
-			if(e.info != null)
-			{
-				var p:Vector3D = e.info.point;
-				var nx:int = (p.x - initX) / CELL_SIZE;
-				var nz:int = (p.z - initZ) / CELL_SIZE;
-				nz *= -1;
-				grid.setWalkable(nx,nz,false);
-				var tx:int = getX(nx);
-				var tz:int = getZ(nz);
+				tx = getX(list[i].x);
+				tz = getZ(list[i].z);
+				TweenLite.to(currentPlayer,0.2,{x:tx,z:tz});
+				i++;
 				
-				var mat:Shader3D = new Shader3D('',[new ColorFilter(0x0)]);
-				var box:Cube = new Cube('',100,100,100,1,mat);
-				box.y = 50;
-				box.x = tx;
-				box.z = tz;
-				cubeContainer.addChild(box);	
+				// complete
+				if(i >= numStep){
+					timer.removeEventListener(TimerEvent.TIMER, onUpdateStep);
+					
+					tx = list[numStep-1].x;
+					tz = list[numStep-1].z;
+					grid.setWalkable(tx,tz,false);
+					grid.setUserData(tx,tz,currentPlayer);
+				}
 			}
-			findPath();
 		}
+		
+		
 		
 		public function addPlayer(p:Pivot3D,tx:int,tz:int):void
 		{
-			cubeContainer.addChild(p);
+			this.addChild(p);
 			p.x = getX(tx);
 			p.z = getZ(tz);
-			p.addEventListener(PlayerEvent.SHOW_AVAILBLE, onShowAvailble);
+			
+			grid.setWalkable(tx,tz,false);
+			grid.setUserData(tx,tz,p);
 		}
 		
-		private function onShowAvailble(e:PlayerEvent):void
+		public function moveCursor(nx:int,nz:int):void
 		{
-			trace('show');
+			cursor.x += nx*UNIT_SIZE;
+			cursor.z += -nz*UNIT_SIZE;
+			
+			cursor.x = Math.max(cursor.x,minX); 
+			cursor.x = Math.min(cursor.x,maxX);
+			
+			cursor.z = Math.min(cursor.z,minZ);
+			cursor.z = Math.max(cursor.z,maxZ);
 		}
+		
+		public function openAction():void
+		{
+			var i:int;
+			var nx:int = getNodeX(cursor.x);
+			var nz:int = getNodeZ(cursor.z);
+			var node:Node = grid.getNode(nx,nz);
+			
+			// TODO: define each action, open menu, selecte grid, check enemy status
+			// NOTE: select node to walk
+			if(pathGroup.length > 0)
+			{
+				var pathX:int;
+				var pathZ:int;
+				for(i=0; i<pathGroup.length; i++)
+				{
+					pathX = getNodeX(pathGroup[i].x);
+					pathZ = getNodeZ(pathGroup[i].z);
+					if(pathX == nx && pathZ == nz)
+					{
+						grid.setEndNode(nx,nz);
+						findPath();
+					}
+				}
+				return;
+			}
+			
+			// NOTE: open menu (walk, attack, etc)
+			if(node.userData)
+			{
+				// get list
+				currentPlayer = node.userData as PlayerTemplate;
+				grid.setStartNode(nx,nz);
+				var list:Vector.<Node> = currentPlayer.getWalkNode(nx,nz);
+				
+				// remove node which out of bound
+				for(i=list.length-1; i>=0; i--)
+				{
+					if(list[i].x < 0 || list[i].z < 0 || list[i].x >= grid.numCols || list[i].z >= grid.numRows)
+					{
+						list.splice(i,1);
+					}
+				}
+				
+				// add walk plane
+				var c:WalkPlane;
+				for(i=0; i<list.length; i++)
+				{
+					c = new WalkPlane();
+					c.x = getX(list[i].x);
+					c.z = getZ(list[i].z);
+					this.addChild(c);
+					pathGroup.push(c);
+				}
+			}
+		}
+		
+		override public function update():void
+		{
+			var i:int;
+			for(i=0; i<pathGroup.length; i++)
+			{
+				pathGroup[i].updateAnimate();
+			}
+			
+			cursor.updateAnimate();
+			
+			super.update();
+		}
+		
 	}
 }
