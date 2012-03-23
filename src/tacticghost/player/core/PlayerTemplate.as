@@ -1,12 +1,15 @@
 package tacticghost.player.core
 {
+	import flare.basic.Scene3D;
 	import flare.core.Mesh3D;
 	import flare.core.Pivot3D;
 	import flare.events.MouseEvent3D;
 	import flare.loaders.ColladaLoader;
+	import flare.loaders.Flare3DLoader2;
 	import flare.utils.Mesh3DUtils;
 	
 	import flash.display.Stage;
+	import flash.events.Event;
 	import flash.events.MouseEvent;
 	
 	import tacticghost.GameScene;
@@ -15,10 +18,9 @@ package tacticghost.player.core
 	
 	public class PlayerTemplate extends Pivot3D
 	{
-		[Embed(source='assets/players/player.dae',mimeType='application/octet-stream')]
-		private var DAEFile:Class
-		
 		private var isClick:Boolean;
+		private var fldr:Flare3DLoader2;
+		private var model:Pivot3D;
 		
 		public static const WALK:int = 1;
 		public static const PLAYER:int = 2;
@@ -83,9 +85,15 @@ package tacticghost.player.core
 		
 		protected function loadModel():void
 		{
-			// load
-			var modelLoader:ColladaLoader = new ColladaLoader(XML(new DAEFile()),this,null,'assets/players/');
-			modelLoader.load();
+			fldr=new Flare3DLoader2("assets/players/player.f3d");
+			fldr.load()
+			fldr.addEventListener(Scene3D.COMPLETE_EVENT,onComplete);
+		}
+		
+		private function onComplete(e:Event):void{
+			model=Pivot3D(fldr.clone());
+			model.setScale(1,1,1);
+			this.addChild(model);
 		}
 	}
 }

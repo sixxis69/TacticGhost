@@ -9,6 +9,7 @@ package tacticghost.maps.core
 	import flare.primitives.Cube;
 	import flare.primitives.Plane;
 	
+	import flash.events.Event;
 	import flash.events.TimerEvent;
 	import flash.geom.Vector3D;
 	import flash.utils.Timer;
